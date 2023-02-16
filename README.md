@@ -1,5 +1,5 @@
 # SRC-Verification-Analyzer
-Analysis and data visualization tool for speedrun.com
+Analysis and data visualization tool for speedrun.com.
 
 ## Usage
 The latest stable release is hosted on my own server located [here](https://mini.amyy.me/src-analyzer). Using the program should be self-explanatory, although more extensive documentation may be written eventually.
