@@ -23,6 +23,7 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import HomeIcon from '@mui/icons-material/Home';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 interface QueueProps {
     games: string,
@@ -35,14 +36,18 @@ interface QueueProps {
 interface QueueState {
     runs: Map<GameEx, QueueRun[]>,
     filter: Filter,
-    categoriesMap: Map<string, RankedRun>
+    categoriesMap: Map<string, RankedRun>,
+    shiftPressed: boolean
 };
 
 export default class Queue extends Component<QueueProps, QueueState> {
     notification: RefObject<Notification>;
-    orderby: OrderBy = "submitted"
+    orderby: OrderBy = "submitted";
+    keyFunc: any;
     constructor(props: QueueProps) {
         super(props);
+
+        this.keyFunc = this.onKey.bind(this); // React is weird.
 
         if (isOrderByType(props.orderby))
             this.orderby = props.orderby;
@@ -50,13 +55,17 @@ export default class Queue extends Component<QueueProps, QueueState> {
         this.state = {
             runs: new Map<GameEx, QueueRun[]>(),
             filter: props.filter ? props.filter : {},
-            categoriesMap: new Map<string, RankedRun>()
+            categoriesMap: new Map<string, RankedRun>(),
+            shiftPressed: false
         };
 
         this.notification = createRef();
     }
 
     async componentDidMount(): Promise<void> {
+        document.addEventListener('keydown', this.keyFunc);
+        document.addEventListener('keyup', this.keyFunc);
+
         this.setAlert({ text: "Fetching required data. This may take a moment.", type: "warning", loading: true, title: "Processing" });
         let games = await this.defineGames();
         if (!games) return;
@@ -65,6 +74,15 @@ export default class Queue extends Component<QueueProps, QueueState> {
         if (this.props.records)
             await this.loadRecords(runs);
         this.setAlert({ text: "Data fetching has completed.", type: "info", title: "Complete", dismissable: true });
+    }
+
+    componentWillUnmount(): void {
+        document.removeEventListener('keydown', this.keyFunc);
+        document.removeEventListener('keyup', this.keyFunc);
+    }
+
+    onKey(event: KeyboardEvent): void {
+        this.setState({ shiftPressed: event.shiftKey });
     }
 
     async defineGames(): Promise<Map<GameEx, QueueRun[]> | undefined> {
@@ -244,11 +262,20 @@ export default class Queue extends Component<QueueProps, QueueState> {
                                                 </TableCell>
                                                 <TableCell>{playersToWeblink(v.players.data)}</TableCell>
                                                 <TableCell sx={{ padding: 0, textAlign: "right" }}>
-                                                    <Tooltip title="Open in New Tab">
-                                                        <IconButton target="_blank" rel="noreferrer noopener" href={v.weblink}>
-                                                            <OpenInNewIcon />
-                                                        </IconButton>
-                                                    </Tooltip>
+                                                    {this.state.shiftPressed &&
+                                                        <Tooltip title="Copy Run Identifier">
+                                                            <IconButton onClick={async () => {await navigator.clipboard.writeText(`${playersToString(v.players.data)} ${categoryToString(v)}`)}}>
+                                                                <ContentCopyIcon />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    }
+                                                    {!this.state.shiftPressed &&
+                                                        <Tooltip title="Open in New Tab">
+                                                            <IconButton target="_blank" rel="noreferrer noopener" href={v.weblink}>
+                                                                <OpenInNewIcon />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    }
                                                 </TableCell>
                                                 <TableCell>{msToTime(v.times.primary_t * 1000)}</TableCell>
                                                 <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
