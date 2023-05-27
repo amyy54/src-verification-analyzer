@@ -374,7 +374,10 @@ export function displayDate(date: Date | string | null | undefined, removeTime: 
 
     let dateTime = DateTime.fromJSDate(dateTmp);
 
-    if (isoDate) return dateTime.toISODate();
+    if (isoDate) {
+        let datetimeISO = dateTime.toISODate();
+        if (datetimeISO) return datetimeISO;
+    }
 
     if (removeTime || (dateTime.get('hour') === 0 && dateTime.get('minute') === 0 && dateTime.get('second') === 0))
         return dateTime.toLocaleString(DateTime.DATE_MED);
